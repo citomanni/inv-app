@@ -15,7 +15,7 @@ import { Label } from "@/components/ui/label";
 import { useRouter } from "next/navigation";
 
 import { authClient } from "@/lib/auth-client";
-import { Alert, AlertDescription, AlertTitle } from "../ui/alert";
+// import { Alert, AlertDescription, AlertTitle } from "../ui/alert";
 import { Terminal } from "lucide-react";
 
 import { IconLoader } from "@tabler/icons-react";
@@ -79,10 +79,14 @@ export function SignupForm({
         </CardHeader>
         <CardContent>
           {error && (
-            <Alert className="mb-4 border border-red-500" variant="destructive">
+            // <Alert className="mb-4 border border-red-500" variant="destructive">
+            //   <Terminal className="h-4 w-4" />
+            //   <AlertDescription>{error}</AlertDescription>
+            // </Alert>
+            <div className="mb-4 border border-red-500" >
               <Terminal className="h-4 w-4" />
-              <AlertDescription>{error}</AlertDescription>
-            </Alert>
+              <div>{error}</div>
+            </div>
           )}
           <form onSubmit={(e) => handleSubmit(e)}>
             <div className="flex flex-col gap-6">
