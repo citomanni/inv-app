@@ -181,6 +181,18 @@ export const investmentReviewSchema = z.object({
 });
 export type InvestmentReviewInput = z.infer<typeof investmentReviewSchema>;
 
+// Admin creates an investment on a user's behalf (test/override feature)
+export const adminInvestmentCreateSchema = z.object({
+  userId: z.string().min(1),
+  fundId: z.string().min(1),
+  amount: z.coerce.number().positive("Amount must be greater than zero"),
+  paymentReference: z.string().max(120).optional().or(z.literal("")),
+  paymentProofUrl: z.string().url("Upload a payment proof to continue"),
+});
+export type AdminInvestmentCreateInput = z.infer<
+  typeof adminInvestmentCreateSchema
+>;
+
 // ────────────────────────────────────────────────────────────────────────────
 // Payouts (admin-triggered return distribution)
 // ────────────────────────────────────────────────────────────────────────────
@@ -202,6 +214,25 @@ export const payoutCreateSchema = z
     { message: "Period start must be on or before period end" },
   );
 export type PayoutCreateInput = z.infer<typeof payoutCreateSchema>;
+
+// Single-investor "set target balance" override (admin test feature)
+export const balanceAdjustPreviewSchema = z.object({
+  userId: z.string().min(1),
+  targetReturns: z.coerce.number().min(0),
+  installments: z.coerce.number().int().min(1).max(12).optional(),
+});
+export type BalanceAdjustPreviewInput = z.infer<
+  typeof balanceAdjustPreviewSchema
+>;
+
+export const balanceAdjustCommitSchema = z.object({
+  userId: z.string().min(1),
+  targetReturns: z.coerce.number().min(0),
+  amounts: z.array(z.number()).min(1),
+});
+export type BalanceAdjustCommitInput = z.infer<
+  typeof balanceAdjustCommitSchema
+>;
 
 // ────────────────────────────────────────────────────────────────────────────
 // Documents

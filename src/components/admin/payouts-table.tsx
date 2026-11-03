@@ -7,6 +7,7 @@ import { format } from "date-fns";
 import {
   CircleDollarSign,
   Plus,
+  SlidersHorizontal,
 } from "lucide-react";
 
 import {
@@ -21,6 +22,10 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { PayoutCreateDialog } from "./payout-create-dialog";
+import {
+  BalanceAdjustDialog,
+  type AdjustInvestor,
+} from "./balance-adjust-dialog";
 
 const fetcher = (url: string) => fetch(url).then((r) => r.json());
 
@@ -40,8 +45,15 @@ interface FundOption {
   targetAnnualReturnPercent: string;
 }
 
-export function PayoutsTable({ fundOptions }: { fundOptions: FundOption[] }) {
+export function PayoutsTable({
+  fundOptions,
+  investors,
+}: {
+  fundOptions: FundOption[];
+  investors: AdjustInvestor[];
+}) {
   const [createOpen, setCreateOpen] = React.useState(false);
+  const [adjustOpen, setAdjustOpen] = React.useState(false);
   const { data, isLoading, mutate } = useSWR(
     "/api/admin/payouts?page=1&limit=50",
     fetcher,
@@ -51,7 +63,11 @@ export function PayoutsTable({ fundOptions }: { fundOptions: FundOption[] }) {
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center justify-end">
+      <div className="flex items-center justify-end gap-2">
+        <Button variant="outline" onClick={() => setAdjustOpen(true)}>
+          <SlidersHorizontal className="mr-1 h-4 w-4" />
+          Adjust investor balance
+        </Button>
         <Button onClick={() => setCreateOpen(true)}>
           <Plus className="mr-1 h-4 w-4" />
           Distribute returns
@@ -167,6 +183,16 @@ export function PayoutsTable({ fundOptions }: { fundOptions: FundOption[] }) {
           mutate();
         }}
         fundOptions={fundOptions}
+      />
+
+      <BalanceAdjustDialog
+        isOpen={adjustOpen}
+        onClose={() => setAdjustOpen(false)}
+        onDone={() => {
+          setAdjustOpen(false);
+          mutate();
+        }}
+        investors={investors}
       />
     </div>
   );
