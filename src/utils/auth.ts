@@ -95,6 +95,19 @@ export async function createUser(data: {
   return res;
 }
 
+export async function setUserPassword(userId: string, newPassword: string) {
+  const res = await authClient.admin.setUserPassword({
+    userId,
+    newPassword,
+  });
+
+  if (res?.error) {
+    throw new Error(res.error.message || "Failed to set user password");
+  }
+
+  return res;
+}
+
 export async function updateUserRole(userId: string, role: string) {
   const res = await authClient.admin.setRole({
     userId,

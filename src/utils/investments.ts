@@ -95,6 +95,106 @@ export async function commitInvestment(opts: {
   return id;
 }
 
+/**
+ * Admin creates an investment on a user's behalf and activates it immediately
+ * (test/override feature). Produces the exact same end state as a user commit
+ * followed by an admin approval: an `active` investment, a completed
+ * `investment_commit` + `investment_active` ledger pair, a bumped fund
+ * `raisedAmount`, and the "investment activated" notification.
+ */
+export async function adminCreateInvestment(opts: {
+  userId: string;
+  fundId: string;
+  amount: number;
+  paymentProofUrl: string;
+  paymentReference?: string | null;
+  reviewerId: string;
+}): Promise<string> {
+  const id = generateId();
+  const now = new Date();
+
+  await db.transaction(async (tx) => {
+    const [theFund] = await tx
+      .select()
+      .from(fund)
+      .where(eq(fund.id, opts.fundId))
+      .limit(1);
+    if (!theFund) throw new Error("Fund not found");
+
+    const [theUser] = await tx
+      .select({ id: user.id })
+      .from(user)
+      .where(eq(user.id, opts.userId))
+      .limit(1);
+    if (!theUser) throw new Error("User not found");
+
+    if (!(opts.amount > 0)) {
+      throw new Error("Amount must be greater than zero");
+    }
+
+    const maturity = new Date(now);
+    maturity.setFullYear(maturity.getFullYear() + theFund.holdYears);
+
+    await tx.insert(investment).values({
+      id,
+      userId: opts.userId,
+      fundId: opts.fundId,
+      amount: String(opts.amount),
+      status: "active",
+      paymentProofUrl: opts.paymentProofUrl,
+      paymentReference: opts.paymentReference ?? null,
+      bankTransferAt: now,
+      activatedAt: now,
+      maturityDate: maturity,
+      reviewedBy: opts.reviewerId,
+      reviewedAt: now,
+      createdAt: now,
+      updatedAt: now,
+    });
+
+    // Ledger: commit (completed) + active, mirroring an approved investment.
+    await tx.insert(transaction).values({
+      id: generateId(),
+      userId: opts.userId,
+      investmentId: id,
+      type: "investment_commit",
+      amount: String(opts.amount),
+      status: "completed",
+      description: `Investment in ${theFund.name}`,
+      createdAt: now,
+    });
+
+    await tx.insert(transaction).values({
+      id: generateId(),
+      userId: opts.userId,
+      investmentId: id,
+      type: "investment_active",
+      amount: String(opts.amount),
+      status: "completed",
+      description: `Investment in ${theFund.name} activated`,
+      createdAt: now,
+    });
+
+    const newRaised = parseFloat(theFund.raisedAmount) + opts.amount;
+    await tx
+      .update(fund)
+      .set({ raisedAmount: String(newRaised), updatedAt: now })
+      .where(eq(fund.id, theFund.id));
+
+    await tx.insert(notification).values({
+      id: generateId(),
+      userId: opts.userId,
+      type: "investment_activated",
+      title: `Your investment in ${theFund.name} is active`,
+      body: `Your $${opts.amount.toLocaleString("en-US")} commitment has been verified and is now earning returns.`,
+      url: "/portfolio",
+      createdAt: now,
+    });
+  });
+
+  return id;
+}
+
 export async function reviewInvestment(opts: {
   investmentId: string;
   reviewerId: string;

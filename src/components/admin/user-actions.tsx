@@ -1,7 +1,15 @@
 "use client";
 
 import { useState } from "react";
-import { Ban, MoreHorizontal, Trash2, Shield, LogOut } from "lucide-react";
+import {
+  Ban,
+  MoreHorizontal,
+  Trash2,
+  Shield,
+  LogOut,
+  TrendingUp,
+  KeyRound,
+} from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -17,6 +25,8 @@ import { UserUnbanDialog } from "./user-unban-dialog";
 import { UserDeleteDialog } from "./user-delete-dialog";
 import { UserRevokeSessionsDialog } from "./user-revoke-sessions-dialog";
 import { UserRoleDialog } from "./user-role-dialog";
+import { UserStartInvestmentDialog } from "./user-start-investment-dialog";
+import { UserSetPasswordDialog } from "./user-set-password-dialog";
 
 interface UserActionsProps {
   user: UserWithDetails;
@@ -30,6 +40,9 @@ export function UserActions({ user, onActionComplete }: UserActionsProps) {
   const [showRevokeSessionsDialog, setShowRevokeSessionsDialog] =
     useState(false);
   const [showRoleDialog, setShowRoleDialog] = useState(false);
+  const [showStartInvestmentDialog, setShowStartInvestmentDialog] =
+    useState(false);
+  const [showSetPasswordDialog, setShowSetPasswordDialog] = useState(false);
   const [dropdownOpen, setDropdownOpen] = useState(false);
 
   const handleDialogClose = (
@@ -51,6 +64,27 @@ export function UserActions({ user, onActionComplete }: UserActionsProps) {
           <DropdownMenuLabel className="text-xs font-medium text-muted-foreground">
             Actions
           </DropdownMenuLabel>
+          <DropdownMenuItem
+            className="text-xs"
+            onClick={() => {
+              setDropdownOpen(false);
+              setShowStartInvestmentDialog(true);
+            }}
+          >
+            <TrendingUp className="mr-2 h-4 w-4" />
+            <span>Start Investment</span>
+          </DropdownMenuItem>
+          <DropdownMenuItem
+            className="text-xs"
+            onClick={() => {
+              setDropdownOpen(false);
+              setShowSetPasswordDialog(true);
+            }}
+          >
+            <KeyRound className="mr-2 h-4 w-4" />
+            <span>Set Password</span>
+          </DropdownMenuItem>
+          <DropdownMenuSeparator />
           <DropdownMenuItem
             className="text-xs"
             onClick={() => {
@@ -150,6 +184,24 @@ export function UserActions({ user, onActionComplete }: UserActionsProps) {
         isOpen={showRoleDialog}
         onClose={() => {
           handleDialogClose(setShowRoleDialog);
+          onActionComplete();
+        }}
+      />
+
+      <UserStartInvestmentDialog
+        user={user}
+        isOpen={showStartInvestmentDialog}
+        onClose={() => {
+          handleDialogClose(setShowStartInvestmentDialog);
+          onActionComplete();
+        }}
+      />
+
+      <UserSetPasswordDialog
+        user={user}
+        isOpen={showSetPasswordDialog}
+        onClose={() => {
+          handleDialogClose(setShowSetPasswordDialog);
           onActionComplete();
         }}
       />

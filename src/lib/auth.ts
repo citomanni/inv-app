@@ -21,7 +21,10 @@ export const auth = betterAuth({
   },
   emailAndPassword: {
     enabled: true,
-    requireEmailVerification: true,
+    // TEMPORARY: accounts are auto-verified on signup (see databaseHooks below),
+    // so verification is not required to log in. To revert, set this back to true,
+    // set emailVerification.sendOnSignUp to true, and remove the databaseHooks block.
+    requireEmailVerification: false,
     resetPasswordTokenExpiresIn: 60 * 60, // 1 hour
   },
   emailVerification: {
@@ -32,8 +35,18 @@ export const auth = betterAuth({
         text: `Click the link to verify your email: ${url}`,
       });
     },
-    sendOnSignUp: true,
+    // TEMPORARY: no verification email on signup since accounts are auto-verified.
+    sendOnSignUp: false,
     autoSignInAfterVerification: true,
+  },
+  // TEMPORARY: mark every newly created user as email-verified by default.
+  // Remove this block (and restore the two flags above) to re-enable real verification.
+  databaseHooks: {
+    user: {
+      create: {
+        before: async (user) => ({ data: { ...user, emailVerified: true } }),
+      },
+    },
   },
   user: {
     additionalFields: {

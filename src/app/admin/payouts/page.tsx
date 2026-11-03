@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { db } from "@/db";
-import { fund } from "@/db/schema";
-import { ne } from "drizzle-orm";
+import { fund, investment, user } from "@/db/schema";
+import { and, eq, ne, sql } from "drizzle-orm";
 import { PayoutsTable } from "@/components/admin/payouts-table";
 
 export const metadata: Metadata = {
@@ -23,6 +23,33 @@ export default async function AdminPayoutsPage() {
     .where(ne(fund.status, "archived"))
     .orderBy(fund.name);
 
+  // Investors with >= 1 active investment, plus their current total returns.
+  // Used by the single-investor "adjust balance" dialog.
+  const investorRows = await db
+    .select({
+      id: user.id,
+      name: user.name,
+      email: user.email,
+      currentReturns: sql<string>`coalesce(sum(${investment.totalReturnsCredited}), '0')`,
+    })
+    .from(user)
+    .innerJoin(
+      investment,
+      and(
+        eq(investment.userId, user.id),
+        eq(investment.status, "active"),
+      ),
+    )
+    .groupBy(user.id, user.name, user.email)
+    .orderBy(user.name);
+
+  const investors = investorRows.map((r) => ({
+    id: r.id,
+    name: r.name,
+    email: r.email,
+    currentReturns: parseFloat(r.currentReturns),
+  }));
+
   return (
     <div className="flex flex-col gap-4 p-4 md:p-6">
       <div>
@@ -32,7 +59,7 @@ export default async function AdminPayoutsPage() {
           fund. Each run posts a transaction and notifies investors.
         </p>
       </div>
-      <PayoutsTable fundOptions={fundOptions} />
+      <PayoutsTable fundOptions={fundOptions} investors={investors} />
     </div>
   );
 }
